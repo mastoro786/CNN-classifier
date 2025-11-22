@@ -1,0 +1,11 @@
+scikit-learn
+librosa
+numpy
+joblib
+resampy
+tensorFlow
+keras-tuner
+soundfile
+matplotlib
+seaborn
+streamlit

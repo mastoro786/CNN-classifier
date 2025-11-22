@@ -1,0 +1,66 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+
+# Virtual Environment
+.venv/
+venv/
+ENV/
+env/
+
+# Model files (too large for GitHub)
+*.h5
+*.keras
+*.pkl
+*.joblib
+
+# Processed data (too large)
+*.npz
+processed_data*.npz
+
+# Dataset (too large, should be downloaded separately)
+dataset/
+dataset_amino/
+data_uji/
+drive-download*/
+
+# Visualizations (generated output)
+visualizations/
+*.png
+*.jpg
+*.jpeg
+*.pgf
+
+# Logs (generated output)
+logs/
+*.log
+*.csv
+
+# TensorFlow/Keras
+*.pb
+saved_model/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Jupyter Notebooks checkpoints
+.ipynb_checkpoints/
+
+# Temporary files
+*.tmp
+*.bak
+*.swp
