@@ -82,87 +82,52 @@ def plot_spectrogram(mel_spec_db, sr):
     plt.tight_layout()
     return fig
 
-def create_gauge_meter(confidence, predicted_class):
-    """Buat gauge meter untuk menampilkan confidence score"""
-    # Determine color based on class
-    if predicted_class.lower() == 'normal':
-        color = "#28a745"  # Green
+def create_simple_gauge(percentage, class_name):
+    """Buat semi-circular gauge meter untuk satu kelas"""
+    # Color based on class
+    if 'skizo' in class_name.lower():
+        gauge_color = "#FF6B6B"  # Red
     else:
-        color = "#dc3545"  # Red
+        gauge_color = "#90EE90"  # Light green
     
     fig = go.Figure(go.Indicator(
-        mode = "gauge+number",
-        value = confidence * 100,
-        domain = {'x': [0, 1], 'y': [0, 1]},
-        title = {'text': f"<b>Confidence Score</b><br><span style='font-size:0.9em;color:{color}'>{predicted_class.upper ()}</span>", 
-                 'font': {'size': 18}},
-        number = {'suffix': "%", 'font': {'size': 48, 'color': color}},
-        gauge = {
-            'axis': {'range': [None, 100], 'tickwidth': 2, 'tickcolor': "darkgray"},
-            'bar': {'color': color, 'thickness': 0.75},
-            'bgcolor': "white",
-            'borderwidth': 2,
-            'bordercolor': "gray",
-            'steps': [
-                {'range': [0, 60], 'color': '#ffcccc'},
-                {'range': [60, 80], 'color': '#ffffcc'},
-                {'range': [80, 100], 'color': '#ccffcc' if predicted_class.lower() == 'normal' else '#ffcccc'}
-            ],
+        mode="gauge",  # Only gauge, no default number
+        value=percentage * 100,
+        domain={'x': [0, 1], 'y': [0, 1]},
+        gauge={
+            'axis': {
+                'range': [0, 100],
+                'tickwidth': 0,
+                'tickcolor': "white",
+                'showticklabels': False
+            },
+            'bar': {'color': gauge_color, 'thickness': 0.7},
+            'bgcolor': "#E8E8D0",
+            'borderwidth': 0,
+            'shape': "angular",
             'threshold': {
-                'line': {'color': color, 'width': 3},
-                'thickness': 0.8,
-                'value': 80
+                'line': {'color': "#2c3e50", 'width': 6},
+                'thickness': 0.75,
+                'value': percentage * 100
             }
         }
     ))
     
-    fig.update_layout(
-        height=350,
-        margin=dict(l=10, r=10, t=80, b=10),
-        font={'family': "Arial"},
-        paper_bgcolor="rgba(0,0,0,0)",
-        plot_bgcolor="rgba(0,0,0,0)"
+    # Add percentage text in center
+    fig.add_annotation(
+        text=f"<b>{percentage*100:.1f}%</b>",
+        x=0.5, y=0.3,  # Position in center-bottom of gauge
+        font=dict(size=36, color='white', family='Arial Black'),
+        showarrow=False,
+        xref="paper",
+        yref="paper"
     )
     
-    return fig
-
-def create_horizontal_bar_chart(prediction_proba, class_names):
-    """Buat horizontal bar chart untuk probabilitas kedua kelas"""
-    colors = ['#28a745', '#dc3545']  # Green for normal, Red for schizophrenia
-    
-    fig = go.Figure()
-    
-    fig.add_trace(go.Bar(
-        y=class_names,
-        x=prediction_proba,
-        orientation='h',
-        text=[f'{p:.1%}' for p in prediction_proba],
-        textposition='outside',
-        textfont=dict(size=16, color='black', family='Arial Black'),
-        marker=dict(
-            color=colors,
-            line=dict(color='rgba(0,0,0,0.4)', width=2)
-        ),
-        hovertemplate='<b>%{y}</b><br>Probability: %{x:.2%}<extra></extra>'
-    ))
-    
     fig.update_layout(
-        title={
-            'text': '<b>Class Probabilities</b>',
-            'x': 0.5,
-            'xanchor': 'center',
-            'font': {'size': 20, 'family': 'Arial Black'}
-        },
-        xaxis_title='<b>Probability</b>',
-        yaxis_title='',
-        xaxis=dict(range=[0, 1.1], tickformat='.0%', showgrid=True, gridcolor='lightgray'),
-        yaxis=dict(tickfont=dict(size=14, family='Arial Black')),
-        height=350,
-        template='plotly_white',
-        showlegend=False,
-        margin=dict(l=20, r=80, t=80, b=60),
-        paper_bgcolor="rgba(0,0,0,0)",
-        plot_bgcolor="white"
+        height=220,
+        margin=dict(l=20, r=20, t=10, b=10),
+        paper_bgcolor='rgba(0,0,0,0)',
+        font={'color': "white", 'family': "Arial Black"}
     )
     
     return fig
@@ -225,7 +190,7 @@ st.markdown("""
         <h1 style="color: white; text-align: center; margin: 0;">
             🎙️ Klasifikasi Gangguan Jiwa Berdasarkan Audio
         </h1>
-        <p style="color: white; text-align: center; margin-top: 0.5rem; font-size: 1.1rem;">
+        <p style="color: white; text-align: center; margin-top: 0.5rem; font-size: 2.5rem;">
             RSJD dr. Amino Gondohutomo
         </p>
     </div>
@@ -282,6 +247,14 @@ uploaded_file = st.file_uploader(
 )
 
 if uploaded_file is not None:
+    # Show loading animation while processing file
+    with st.spinner("⏳ Memuat audio file..."):
+        import time
+        time.sleep(0.3)  # Small delay to show loading animation
+    
+    # Success indicator - Audio ready
+    st.success("✅ Audio berhasil dimuat dan siap untuk dianalisis!")
+    
     # Audio player
     col1, col2 = st.columns([2, 1])
     
@@ -298,80 +271,139 @@ if uploaded_file is not None:
     st.markdown("---")
     
     if st.button("🔍 Analisis Audio", type="primary", use_container_width=True):
-        with st.spinner("🔄 Memproses audio..."):
-            try:
-                # Load audio
-                audio_bytes = uploaded_file.read()
-                audio_data, sr = librosa.load(io.BytesIO(audio_bytes), sr=SAMPLE_RATE)
+        # Create progress tracking
+        progress_bar = st.progress(0)
+        status_text = st.empty()
+        
+        try:
+            import time
+            
+            # Step 1: Loading audio
+            status_text.info("📂 Step 1/4: Loading audio file...")
+            audio_bytes = uploaded_file.read()
+            audio_data, sr = librosa.load(io.BytesIO(audio_bytes), sr=SAMPLE_RATE)
+            progress_bar.progress(25)
+            time.sleep(0.2)
+            
+            # Step 2: Extracting features
+            status_text.info("🎵 Step 2/4: Extracting Mel Spectrogram features...")
+            spectrogram = extract_mel_spectrogram(audio_data, sr)
+            features_for_model = spectrogram[np.newaxis, ..., np.newaxis]
+            progress_bar.progress(50)
+            time.sleep(0.2)
+            
+            # Step 3: Running AI model
+            status_text.info("🤖 Step 3/4: Running CNN classification model...")
+            prediction_proba = model.predict(features_for_model, verbose=0)[0]
+            progress_bar.progress(75)
+            time.sleep(0.2)
+            
+            # Step 4: Processing results
+            status_text.info("📊 Step 4/4: Processing results...")
+            
+            # Handle binary classification
+            if len(prediction_proba.shape) == 0 or prediction_proba.shape[0] == 1:
+                # Binary with sigmoid output
+                prob_positive = float(prediction_proba) if prediction_proba.shape == () else float(prediction_proba[0])
+                prediction_proba = np.array([1 - prob_positive, prob_positive])
+            
+            predicted_index = np.argmax(prediction_proba)
+            predicted_class = class_names[predicted_index]
+            confidence = prediction_proba[predicted_index]
+            
+            progress_bar.progress(100)
+            time.sleep(0.3)
+            
+            # Completion message
+            status_text.success("✅ Analisis selesai! Menampilkan hasil...")
+            time.sleep(0.5)
+            
+            # Clear progress indicators
+            progress_bar.empty()
+            status_text.empty()
+            
+            # Results section
+            st.markdown("---")
+            
+            # Header dengan hasil prediksi (Purple)
+            st.markdown(f"""
+                <div style="background: linear-gradient(135deg, #5B3A8C 0%, #3D2564 100%); 
+                            padding: 1.5rem; border-radius: 10px; margin-bottom: 2rem;">
+                    <h2 style="color: white; text-align: center; margin: 0; font-size: 2rem;">
+                        HASIL ANALISA : {predicted_class.upper()} {confidence*100:.1f}%
+                    </h2>
+                </div>
+            """, unsafe_allow_html=True)
+            
+            # Calculate probabilities
+            skizo_idx = [i for i, name in enumerate(class_names) if 'skizo' in name.lower()]
+            normal_idx = [i for i, name in enumerate(class_names) if 'normal' in name.lower()]
+            skizo_prob = prediction_proba[skizo_idx[0]] if skizo_idx else 0
+            normal_prob = prediction_proba[normal_idx[0]] if normal_idx else 0
+            
+            # Two columns for gauges (NO CONTAINER - direct to dark background)
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                # Title - WHITE TEXT
+                st.markdown("""
+                    <h3 style="text-align: center; color: white; margin-bottom: 10px; font-family: Arial Black;">
+                        SKIZOFRENIA
+                    </h3>
+                """, unsafe_allow_html=True)
                 
-                # Extract features
-                spectrogram = extract_mel_spectrogram(audio_data, sr)
-                features_for_model = spectrogram[np.newaxis, ..., np.newaxis]
+                # Gauge
+                st.plotly_chart(
+                    create_simple_gauge(skizo_prob, "skizofrenia"),
+                    use_container_width=True,
+                    key="gauge_skizo"
+                )
+            
+            with col2:
+                # Title - WHITE TEXT
+                st.markdown("""
+                    <h3 style="text-align: center; color: white; margin-bottom: 10px; font-family: Arial Black;">
+                        NORMAL
+                    </h3>
+                """, unsafe_allow_html=True)
                 
-                # Predict
-                prediction_proba = model.predict(features_for_model, verbose=0)[0]
+                # Gauge
+                st.plotly_chart(
+                    create_simple_gauge(normal_prob, "normal"),
+                    use_container_width=True,
+                    key="gauge_normal"
+                )
+            
+            # Interpretation
+            st.markdown("### 💡 Interpretasi Hasil")
+            interpretation = get_interpretation(predicted_class.lower(), confidence)
+            st.info(interpretation)
+            
+            # Audio Visualizations
+            st.markdown("---")
+            st.markdown("### 🎵 Visualisasi Audio")
+            
+            tab1, tab2 = st.tabs(["Waveform", "Spectrogram"])
+            
+            with tab1:
+                fig_wave = plot_waveform(audio_data, sr)
+                st.pyplot(fig_wave)
                 
-                # Handle binary classification
-                if len(prediction_proba.shape) == 0 or prediction_proba.shape[0] == 1:
-                    # Binary with sigmoid output
-                    prob_positive = float(prediction_proba) if prediction_proba.shape == () else float(prediction_proba[0])
-                    prediction_proba = np.array([1 - prob_positive, prob_positive])
+                # Audio statistics
+                st.markdown("**Audio Statistics:**")
+                cols = st.columns(4)
+                cols[0].metric("Duration", f"{len(audio_data)/sr:.2f} s")
+                cols[1].metric("Sample Rate", f"{sr} Hz")
+                cols[2].metric("Max Amplitude", f"{np.max(np.abs(audio_data)):.3f}")
+                cols[3].metric("RMS Energy", f"{np.sqrt(np.mean(audio_data**2)):.3f}")
+            
+            with tab2:
+                fig_spec = plot_spectrogram(spectrogram, sr)
+                st.pyplot(fig_spec)
                 
-                predicted_index = np.argmax(prediction_proba)
-                predicted_class = class_names[predicted_index]
-                confidence = prediction_proba[predicted_index]
-                
-                # Results section
-                st.markdown("---")
-                st.markdown("## 📊 Hasil Analisis")
-                
-                # **NEW: 2 COLUMNS LAYOUT - Gauge Meter (Left) + Horizontal Bar Chart (Right)**
-                viz_col1, viz_col2 = st.columns(2)
-                
-                with viz_col1:
-                    st.plotly_chart(
-                        create_gauge_meter(confidence, predicted_class),
-                        use_container_width=True,
-                        key="gauge"
-                    )
-                
-                with viz_col2:
-                    st.plotly_chart(
-                        create_horizontal_bar_chart(prediction_proba, class_names),
-                        use_container_width=True,
-                        key="bar"
-                    )
-                
-                # Interpretation
-                st.markdown("### 💡 Interpretasi Hasil")
-                interpretation = get_interpretation(predicted_class.lower(), confidence)
-                st.info(interpretation)
-                
-                # Audio Visualizations
-                st.markdown("---")
-                st.markdown("### 🎵 Visualisasi Audio")
-                
-                tab1, tab2 = st.tabs(["Waveform", "Spectrogram"])
-                
-                with tab1:
-                    fig_wave = plot_waveform(audio_data, sr)
-                    st.pyplot(fig_wave)
-                    
-                    # Audio statistics
-                    st.markdown("**Audio Statistics:**")
-                    cols = st.columns(4)
-                    cols[0].metric("Duration", f"{len(audio_data)/sr:.2f} s")
-                    cols[1].metric("Sample Rate", f"{sr} Hz")
-                    cols[2].metric("Max Amplitude", f"{np.max(np.abs(audio_data)):.3f}")
-                    cols[3].metric("RMS Energy", f"{np.sqrt(np.mean(audio_data**2)):.3f}")
-                
-                with tab2:
-                    fig_spec = plot_spectrogram(spectrogram, sr)
-                    st.pyplot(fig_spec)
-                
-            except Exception as e:
-                st.error(f"❌ Error saat memproses audio: {e}")
-                st.exception(e)
+        except Exception as e:
+            st.error(f"❌ Error saat memproses audio: {e}")
+            st.exception(e)
 
 else:
     # Placeholder
