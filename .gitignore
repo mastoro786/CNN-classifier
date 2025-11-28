@@ -64,3 +64,25 @@ Thumbs.db
 *.tmp
 *.bak
 *.swp
+
+# ===== AUTHENTICATION & SECURITY =====
+# Database with user credentials (NEVER commit!)
+auth/users.db
+auth/*.db
+
+# Database backups
+backups/*.db
+backups/*.sql
+
+# Environment variables (sensitive data)
+.env
+config/.env
+*.env.local
+
+# Config files with secrets
+config/secrets.yaml
+config/credentials.json
+
+# Backup files contain sensitive data
+*_backup*.py
+app_optimized_before_*.py

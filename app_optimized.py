@@ -2,9 +2,11 @@
 Optimized Streamlit App untuk Klasifikasi Audio (Normal vs Skizofrenia)
 
 Features:
-- Modern, clean UI with Gauge Meter and Horizontal Bar Chart
+- User Authentication & Role-based Access Control
+- Modern, clean UI with Gauge Meter
 - Real-time audio visualization
 - Detailed prediction with confidence scores
+- Audit logging
 """
 
 import streamlit as st
@@ -16,6 +18,17 @@ import io
 import pandas as pd
 import matplotlib.pyplot as plt
 import plotly.graph_objects as go
+
+# Authentication
+from auth.authenticator import get_authenticator
+
+# --- PAGE CONFIG ---
+st.set_page_config(
+    page_title="RSJD Audio Classifier",
+    page_icon="🎙️",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
 
 # --- KONFIGURASI ---
 MODEL_PATH = "models/best_model.h5"
@@ -183,7 +196,24 @@ st.set_page_config(
     layout="wide"
 )
 
-# Header
+# ===================================================================
+# AUTHENTICATION CHECK (FIRST!)
+# ===================================================================
+
+# Get authenticator instance
+auth = get_authenticator()
+
+# Check if authenticated
+if not auth.is_authenticated():
+    # Show CLEAN login page (NO sidebar, NO header)
+    auth.show_login_page()
+    st.stop()  # Stop execution - don't load anything else
+
+# ===================================================================
+# USER IS AUTHENTICATED - LOAD MAIN APPLICATION
+# ===================================================================
+
+# Header (ONLY shown after login)
 st.markdown("""
     <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
                 padding: 2rem; border-radius: 10px; margin-bottom: 2rem;">
@@ -196,7 +226,7 @@ st.markdown("""
     </div>
 """, unsafe_allow_html=True)
 
-# Load model
+# Load model (ONLY after login)
 with st.spinner("⏳ Memuat model AI..."):
     model, class_names, error = load_model_and_info()
 
@@ -206,8 +236,13 @@ if error:
 
 st.success("✅ Model berhasil dimuat dan siap digunakan!")
 
-# Sidebar Info
+# Sidebar Info (ONLY after login)
 with st.sidebar:
+    # User info at top
+    auth.show_user_info_sidebar()
+    
+    st.markdown("---")
+    
     st.markdown("### ℹ️ Informasi Aplikasi")
     st.markdown(f"""
     - **Model**: CNN Deep Learning
@@ -235,6 +270,10 @@ with st.sidebar:
         "Hasil prediksi ini **HANYA** sebagai alat bantu screening awal. "
         "Diagnosis pasti harus dilakukan oleh profesional kesehatan mental yang berkualifikasi."
     )
+
+# ===================================================================
+# MAIN APPLICATION CONTENT
+# ===================================================================
 
 # Main content
 st.markdown("### 📤 Upload Audio")

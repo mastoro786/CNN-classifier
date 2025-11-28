@@ -26,12 +26,30 @@ Developed for RSJD dr. Amino Gondohutomo
 
 ## 🎯 Features
 
+### 🔐 Security & Authentication (NEW!)
+- ✅ **User Authentication**: Secure login system with PBKDF2-SHA256 password hashing
+- ✅ **Role-Based Access Control**: Admin, Doctor, and Staff roles
+- ✅ **Session Management**: 30-minute auto-logout for security
+- ✅ **Audit Logging**: Complete login history tracking
+- ✅ **Admin Panel**: User management dashboard
+
+### 🤖 Machine Learning
 - ✅ **Binary Classification**: Normal vs Skizofrenia
 - ✅ **Deep CNN Architecture**: 4 convolutional blocks with batch normalization
 - ✅ **Advanced Data Augmentation**: 5 techniques (noise, pitch shift, time stretch, reverb, time shift)
 - ✅ **Comprehensive Metrics**: Accuracy, Precision, Recall, F1, AUC, ROC
-- ✅ **Modern Web Interface**: Streamlit app with gauge meter and interactive charts
 - ✅ **Production Ready**: Early stopping, model checkpointing, adaptive learning rate
+
+### 🎨 User Interface
+- ✅ **Modern Web Interface**: Streamlit app with gauge meters and interactive charts
+- ✅ **Clean Login Page**: Professional authentication UI
+- ✅ **Real-time Visualization**: Audio waveform and spectrogram
+- ✅ **Responsive Design**: Works on desktop and tablets
+
+### 📱 Mobile Deployment
+- ✅ **TensorFlow Lite**: Optimized model (1.24MB quantized)
+- ✅ **Flutter Guide**: Complete offline mobile app documentation
+- ✅ **Cross-platform**: Android & iOS support
 
 ---
 
@@ -77,18 +95,30 @@ CNN_amino/
 │   ├── optimized_feature_extraction.py  # Feature extraction + augmentation
 │   ├── optimized_cnn_model.py           # 3 CNN architectures (Simple/Deep/Attention)
 │   ├── optimized_train.py               # Training script with K-Fold CV
-│   └── app_optimized.py                 # Streamlit web application
+│   ├── app_optimized.py                 # Streamlit web application (with auth)
+│   └── setup_auth.py                    # Authentication setup script
+│
+├── 🔐 AUTHENTICATION
+│   ├── auth/
+│   │   ├── __init__.py                  # Auth package
+│   │   ├── authenticator.py             # Login/logout logic
+│   │   ├── password_utils.py            # Password hashing
+│   │   ├── database.py                  # SQLite operations
+│   │   └── users.db                     # User credentials (NOT in git)
+│   └── AUTH_README.md                   # Authentication documentation
 │
 ├── 📚 DOCUMENTATION
 │   ├── README.md                        # This file
-│   ├── EXECUTIVE_SUMMARY.md             # Project overview
-│   ├── README_OPTIMIZED.md              # Detailed documentation
+│   ├── AUTH_README.md                   # Authentication guide
+│   ├── FLUTTER_MOBILE_GUIDE.md          # Mobile deployment guide
+│   ├── PROJECT_CHECKPOINT.md            # Project continuity doc
 │   └── ANALYSIS_REPORT.md               # Technical analysis
 │
 ├── 🛠️ UTILITIES
 │   ├── compare_models.py                # Model benchmarking tool
 │   ├── show_results.py                  # Training results viewer
 │   ├── check_data.py                    # Data statistics
+│   ├── convert_to_tflite.py             # TFLite model converter
 │   └── QUICK_START.py                   # Interactive guide
 │
 ├── ⚙️ CONFIGURATION
@@ -97,9 +127,11 @@ CNN_amino/
 │
 └── 📂 DATA (Not included in repo)
     ├── dataset_amino/                   # Raw audio files
-    ├── models/                          # Trained models (.h5)
+    ├── models/                          # Trained models (.h5, .tflite)
     ├── processed_data_optimized.npz     # Processed features
-    └── visualizations/                  # Training graphs
+    ├── visualizations/                  # Training graphs
+    ├── logs/                            # Training & login logs
+    └── backups/                         # Database backups
 
 ```
 
@@ -154,7 +186,23 @@ python optimized_feature_extraction.py
 
 **Output**: `processed_data_optimized.npz` (~145 MB)
 
-### 5. Train Model
+### 5. Setup Authentication (NEW!)
+
+```bash
+# Initialize database and create default users
+python setup_auth.py
+```
+
+**Default Credentials** (⚠️ Change immediately after first login!):
+| Username | Password | Role |
+|----------|----------|------|
+| `admin` | `Admin123` | Administrator |
+| `dr_amino` | `Doctor123` | Doctor |
+| `staff1` | `Staff123` | Staff |
+
+📖 **Full Authentication Guide**: See [AUTH_README.md](AUTH_README.md)
+
+### 6. Train Model
 
 ```bash
 python optimized_train.py
@@ -172,13 +220,17 @@ BATCH_SIZE = 16
 - `visualizations/` - Training graphs
 - `logs/` - Training logs
 
-### 6. Run Web Application
+### 7. Run Web Application
 
 ```bash
 streamlit run app_optimized.py
 ```
 
 **Access**: http://localhost:8501
+
+**Login** with the credentials above (change password after first login!)
+
+### 8. Convert to TFLite (Optional - For Mobile)
 
 ---
 
